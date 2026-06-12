@@ -73,8 +73,13 @@ def test_viewer_forbidden_on_admin_pages(web):
 
 def test_admin_can_access_admin_pages(web):
     login(web, "admin", "admin123")
-    for path in ("/secrets", "/servers", "/users", "/ssh"):
+    for path in ("/secrets", "/servers", "/users", "/ssh", "/telegram"):
         assert web.get(path).status_code == 200, path
+
+
+def test_viewer_forbidden_on_telegram(web):
+    login(web, "viewer", "view123")
+    assert web.get("/telegram").status_code == 403
 
 
 def test_admin_sets_and_sees_secret(web):

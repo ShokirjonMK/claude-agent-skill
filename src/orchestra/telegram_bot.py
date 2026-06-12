@@ -139,28 +139,36 @@ class TelegramBot:
 
     # ── Long-polling (haqiqiy Telegram) ──────────────────────────────────────
     async def run(self, *, stop_event: asyncio.Event | None = None) -> None:
+        """Token va yoqilgan/o'chirilgan holatini HAR siklda Secrets'dan qayta o'qiydi —
+        shu sababli admin-paneldan boshqarish (token kiritish, on/off) darhol qo'llanadi."""
         import httpx
 
-        # Token Secrets'dan dinamik keladi — yo'q bo'lsa CRASH qilmaymiz, kutamiz.
-        token = await self._store.get_config("TG_BOT_TOKEN")
-        while not token:
-            print("⏳ TG_BOT_TOKEN kutilyapti (Secrets sahifasidan kiriting)…")
-            await asyncio.sleep(15)
-            if stop_event is not None and stop_event.is_set():
-                return
-            token = await self._store.get_config("TG_BOT_TOKEN")
-        base = f"https://api.telegram.org/bot{token}"
         offset = 0
         async with httpx.AsyncClient(timeout=40) as client:
             while stop_event is None or not stop_event.is_set():
+                enabled = (await self._store.get_config("TG_BOT_ENABLED", "1")) not in (
+                    "0", "false", "False", "off", "no",
+                )
+                token = await self._store.get_config("TG_BOT_TOKEN")
+                if not token or not enabled:
+                    # Token yo'q yoki o'chirilgan — kutamiz (crash yo'q).
+                    await asyncio.sleep(8)
+                    continue
+
+                base = f"https://api.telegram.org/bot{token}"
                 try:
                     resp = await client.get(
-                        f"{base}/getUpdates", params={"offset": offset, "timeout": 30}
+                        f"{base}/getUpdates", params={"offset": offset, "timeout": 25}
                     )
                     data = resp.json()
                 except Exception:
                     await asyncio.sleep(3)
                     continue
+                if not data.get("ok"):
+                    # Token noto'g'ri bo'lishi mumkin — biroz kutib, qayta o'qiymiz.
+                    await asyncio.sleep(5)
+                    continue
+
                 for upd in data.get("result", []):
                     offset = upd["update_id"] + 1
                     msg = upd.get("message") or upd.get("edited_message")
@@ -170,9 +178,9 @@ class TelegramBot:
                     text = msg.get("text", "")
                     user_id = str(msg.get("from", {}).get("id", chat_id))
 
-                    async def send(reply: str, _cid=chat_id) -> None:
+                    async def send(reply: str, _cid=chat_id, _base=base) -> None:
                         await client.post(
-                            f"{base}/sendMessage",
+                            f"{_base}/sendMessage",
                             json={"chat_id": _cid, "text": reply, "parse_mode": "Markdown"},
                         )
 

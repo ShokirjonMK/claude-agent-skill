@@ -50,12 +50,13 @@ def create_app(
         ssh,
         stream,
         tasks,
+        telegram,
         users,
     )
 
     for mod in (
         auth_routes, dashboard, tasks, audit, stream, chat,
-        ssh, servers, secrets_routes, users,
+        ssh, servers, secrets_routes, telegram, users,
     ):
         app.include_router(mod.router)
 
