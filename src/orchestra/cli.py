@@ -148,18 +148,17 @@ def main(argv: list[str] | None = None) -> int:
         cmd_web()
         return 0
 
-    coro = {
-        "run": cmd_run(),
-        "bot": cmd_bot(),
-        "initdb": cmd_initdb(),
-        "submit": cmd_submit(args.text) if args.cmd == "submit" else None,
-        "status": cmd_status(args.id) if args.cmd == "status" else None,
-        "createadmin": cmd_createadmin(args.username, args.password)
-        if args.cmd == "createadmin"
-        else None,
-    }[args.cmd]
+    # Faqat tanlangan buyruq coroutine'ini quramiz (boshqalarini emas — RuntimeWarning'siz).
+    dispatch = {
+        "run": lambda: cmd_run(),
+        "bot": lambda: cmd_bot(),
+        "initdb": lambda: cmd_initdb(),
+        "submit": lambda: cmd_submit(args.text),
+        "status": lambda: cmd_status(args.id),
+        "createadmin": lambda: cmd_createadmin(args.username, args.password),
+    }
     try:
-        asyncio.run(coro)
+        asyncio.run(dispatch[args.cmd]())
     except KeyboardInterrupt:
         print("\nTo'xtatildi.")
     return 0
