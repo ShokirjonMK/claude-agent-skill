@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% block title %}Serverlar — Orchestra{% endblock %}
+{% block content %}
+<h1 class="text-xl font-bold mb-4">SSH serverlar</h1>
+
+<form method="post" action="/servers" class="grid md:grid-cols-3 gap-2 mb-6 bg-slate-800 p-4 rounded-xl border border-slate-700">
+  <input name="name" placeholder="Nom" required class="px-3 py-2 rounded bg-slate-900 border border-slate-600">
+  <input name="host" placeholder="Host/IP" required class="px-3 py-2 rounded bg-slate-900 border border-slate-600">
+  <input name="port" value="22" class="px-3 py-2 rounded bg-slate-900 border border-slate-600">
+  <input name="username" placeholder="Foydalanuvchi" required class="px-3 py-2 rounded bg-slate-900 border border-slate-600">
+  <select name="auth_method" class="px-3 py-2 rounded bg-slate-900 border border-slate-600">
+    <option value="password">Parol</option>
+    <option value="key">Maxfiy kalit</option>
+  </select>
+  <input name="secret_value" placeholder="Parol yoki private key" class="px-3 py-2 rounded bg-slate-900 border border-slate-600">
+  <button class="bg-amber-600 hover:bg-amber-500 px-4 rounded font-semibold md:col-span-3">Qo'shish</button>
+</form>
+
+<table class="w-full text-sm">
+  <thead class="text-slate-400 text-left border-b border-slate-700">
+    <tr><th class="py-2">Nom</th><th>Host</th><th>User</th><th>Auth</th><th></th></tr>
+  </thead>
+  <tbody>
+    {% for s in servers %}
+    <tr class="border-b border-slate-800">
+      <td class="py-2"><a href="/ssh?server={{ s.id }}" class="text-emerald-400">{{ s.name }}</a></td>
+      <td>{{ s.host }}:{{ s.port }}</td>
+      <td>{{ s.username }}</td>
+      <td>{{ s.auth_method }}</td>
+      <td><form method="post" action="/servers/{{ s.id }}/delete"><button class="text-rose-400">O'chirish</button></form></td>
+    </tr>
+    {% else %}<tr><td colspan="5" class="text-slate-500 py-3">Server yo'q.</td></tr>{% endfor %}
+  </tbody>
+</table>
+{% endblock %}

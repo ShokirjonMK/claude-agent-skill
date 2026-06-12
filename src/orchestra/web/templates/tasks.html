@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% block title %}Vazifalar — Orchestra{% endblock %}
+{% block content %}
+<h1 class="text-xl font-bold mb-4">Vazifalar</h1>
+
+{% if user.role.value in ['operator', 'admin'] %}
+<form method="post" action="/tasks" class="flex gap-2 mb-6">
+  <input name="description" placeholder="Yangi vazifa tavsifi..." required
+         class="flex-1 px-3 py-2 rounded bg-slate-900 border border-slate-600">
+  <button class="bg-emerald-600 hover:bg-emerald-500 px-4 rounded font-semibold">Qo'shish</button>
+</form>
+{% endif %}
+
+<table class="w-full text-sm">
+  <thead class="text-slate-400 text-left border-b border-slate-700">
+    <tr><th class="py-2">ID</th><th>Sarlavha</th><th>Holat</th></tr>
+  </thead>
+  <tbody>
+    {% for t in tasks %}
+    <tr class="border-b border-slate-800 hover:bg-slate-800">
+      <td class="py-2"><a href="/tasks/{{ t.id }}" class="text-emerald-400"><code>{{ t.id[:8] }}</code></a></td>
+      <td>{{ t.title[:60] }}</td>
+      <td>{{ t.status.value }}</td>
+    </tr>
+    {% else %}
+    <tr><td colspan="3" class="text-slate-500 py-3">Vazifalar yo'q.</td></tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endblock %}

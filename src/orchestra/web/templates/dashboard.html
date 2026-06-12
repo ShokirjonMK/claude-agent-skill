@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+{% block title %}Dashboard — Orchestra{% endblock %}
+{% block content %}
+<h1 class="text-xl font-bold mb-4">Dashboard</h1>
+
+<div class="grid md:grid-cols-2 gap-6">
+  <section class="bg-slate-800 rounded-xl border border-slate-700 p-4">
+    <h2 class="font-semibold mb-3 text-emerald-400">Faol agentlar</h2>
+    <div id="agents" class="space-y-1 text-sm">
+      {% for r in runs %}
+      <div class="flex justify-between"><span>🤖 {{ r.role }} <code class="text-slate-400">{{ r.id }}</code></span><span class="text-slate-400">{{ r.status }}</span></div>
+      {% else %}<div class="text-slate-500">Hozircha faol agent yo'q.</div>{% endfor %}
+    </div>
+  </section>
+
+  <section class="bg-slate-800 rounded-xl border border-slate-700 p-4">
+    <h2 class="font-semibold mb-3 text-emerald-400">Vazifalar</h2>
+    <div class="space-y-1 text-sm">
+      {% for t in tasks %}
+      <a href="/tasks/{{ t.id }}" class="flex justify-between hover:bg-slate-700 px-2 py-1 rounded">
+        <span>{{ t.title[:48] }}</span>
+        <span class="text-slate-400">{{ t.status.value }}</span>
+      </a>
+      {% else %}<div class="text-slate-500">Vazifalar yo'q.</div>{% endfor %}
+    </div>
+  </section>
+</div>
+
+<section class="bg-slate-800 rounded-xl border border-slate-700 p-4 mt-6">
+  <h2 class="font-semibold mb-3 text-emerald-400">Real-vaqt oqim</h2>
+  <div id="live" class="space-y-1 text-sm font-mono max-h-72 overflow-auto">
+    {% for e in events %}
+    <div class="text-slate-300">[{{ e.status }}] {{ e.agent_id or '' }} — {{ e.message }}</div>
+    {% endfor %}
+  </div>
+</section>
+
+<script>
+  const box = document.getElementById('live');
+  const es = new EventSource('/events/stream');
+  es.onmessage = (ev) => {
+    try {
+      const d = JSON.parse(ev.data);
+      const line = document.createElement('div');
+      line.className = 'text-emerald-300';
+      line.textContent = `[${d.type}] ${d.role||''} ${d.agent_id||''} — ${d.status||d.text||''}`;
+      box.prepend(line);
+    } catch (e) {}
+  };
+</script>
+{% endblock %}

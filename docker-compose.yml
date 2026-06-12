@@ -1,0 +1,56 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: orchestra
+      POSTGRES_PASSWORD: orchestra
+      POSTGRES_DB: orchestra
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U orchestra"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  # Jadvallarni yaratadi va bootstrap admin'ni qo'shadi, so'ng chiqadi.
+  initdb:
+    build: .
+    env_file: .env
+    depends_on:
+      postgres:
+        condition: service_healthy
+    command: ["python", "-m", "orchestra.cli", "initdb"]
+    restart: "no"
+
+  orchestrator:
+    build: .
+    env_file: .env
+    depends_on:
+      initdb:
+        condition: service_completed_successfully
+    command: ["python", "-m", "orchestra.cli", "run"]
+    restart: unless-stopped
+
+  bot:
+    build: .
+    env_file: .env
+    depends_on:
+      initdb:
+        condition: service_completed_successfully
+    command: ["python", "-m", "orchestra.cli", "bot"]
+    restart: unless-stopped
+
+  web:
+    build: .
+    env_file: .env
+    depends_on:
+      initdb:
+        condition: service_completed_successfully
+    command: ["python", "-m", "orchestra.cli", "web"]
+    ports:
+      - "8000:8000"
+    restart: unless-stopped
+
+volumes:
+  pgdata:

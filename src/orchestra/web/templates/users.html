@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+{% block title %}Foydalanuvchilar — Orchestra{% endblock %}
+{% block content %}
+<h1 class="text-xl font-bold mb-4">Foydalanuvchilar va rollar</h1>
+
+<form method="post" action="/users" class="grid md:grid-cols-4 gap-2 mb-6 bg-slate-800 p-4 rounded-xl border border-slate-700">
+  <input name="username" placeholder="Login" required class="px-3 py-2 rounded bg-slate-900 border border-slate-600">
+  <input name="password" type="password" placeholder="Parol" required class="px-3 py-2 rounded bg-slate-900 border border-slate-600">
+  <select name="role" class="px-3 py-2 rounded bg-slate-900 border border-slate-600">
+    <option value="viewer">viewer</option>
+    <option value="operator">operator</option>
+    <option value="admin">admin</option>
+  </select>
+  <button class="bg-amber-600 hover:bg-amber-500 px-4 rounded font-semibold">Qo'shish</button>
+</form>
+
+<table class="w-full text-sm">
+  <thead class="text-slate-400 text-left border-b border-slate-700">
+    <tr><th class="py-2">Login</th><th>Rol</th><th>Holat</th><th>Oxirgi kirish</th><th></th></tr>
+  </thead>
+  <tbody>
+    {% for u in users %}
+    <tr class="border-b border-slate-800">
+      <td class="py-2">{{ u.username }}</td>
+      <td>{{ u.role.value }}</td>
+      <td>{{ 'faol' if u.is_active else 'o''chiq' }}</td>
+      <td class="text-slate-500">{{ u.last_login or '—' }}</td>
+      <td>
+        {% if u.id != user.id %}
+        <form method="post" action="/users/{{ u.id }}/delete"><button class="text-rose-400">O'chirish</button></form>
+        {% else %}<span class="text-slate-600">(siz)</span>{% endif %}
+      </td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endblock %}

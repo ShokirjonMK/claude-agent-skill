@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% block title %}Kirish — Orchestra{% endblock %}
+{% block content %}
+<div class="max-w-sm mx-auto mt-20 bg-slate-800 p-8 rounded-xl border border-slate-700">
+  <h1 class="text-2xl font-bold mb-6 text-emerald-400">🎼 Orchestra</h1>
+  {% if error %}
+  <div class="bg-rose-900/50 text-rose-200 px-3 py-2 rounded mb-4 text-sm">
+    Login yoki parol noto'g'ri.
+  </div>
+  {% endif %}
+  <form method="post" action="/login" class="space-y-4">
+    <input name="username" placeholder="Foydalanuvchi" autofocus
+           class="w-full px-3 py-2 rounded bg-slate-900 border border-slate-600">
+    <input name="password" type="password" placeholder="Parol"
+           class="w-full px-3 py-2 rounded bg-slate-900 border border-slate-600">
+    <button class="w-full bg-emerald-600 hover:bg-emerald-500 py-2 rounded font-semibold">
+      Kirish
+    </button>
+  </form>
+</div>
+{% endblock %}

@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+{% block title %}SSH — Orchestra{% endblock %}
+{% block content %}
+<h1 class="text-xl font-bold mb-2">SSH boshqaruv</h1>
+<div class="bg-rose-900/40 text-rose-200 px-3 py-2 rounded mb-4 text-sm">
+  ⚠️ To'liq cheklovsiz terminal — har komanda audit'ga yoziladi. Ehtiyot bo'ling.
+</div>
+
+<div class="flex gap-2 mb-4 flex-wrap">
+  {% for s in servers %}
+  <a href="/ssh?server={{ s.id }}"
+     class="px-3 py-1 rounded {{ 'bg-emerald-700' if selected and selected.id == s.id else 'bg-slate-700' }}">
+    {{ s.name }}
+  </a>
+  {% else %}<span class="text-slate-500">Avval <a href="/servers" class="text-emerald-400">server qo'shing</a>.</span>{% endfor %}
+</div>
+
+{% if selected %}
+<form method="post" action="/ssh/{{ selected.id }}/run" class="flex gap-2 mb-4">
+  <input name="command" placeholder="komanda (masalan: uptime)" autofocus required
+         class="flex-1 px-3 py-2 rounded bg-slate-900 border border-slate-600 font-mono">
+  <button class="bg-amber-600 hover:bg-amber-500 px-4 rounded font-semibold">Run</button>
+</form>
+
+{% if last %}
+<pre class="bg-black text-green-300 p-3 rounded text-sm overflow-auto max-h-64 mb-4">exit={{ last.exit_code }} ({{ last.duration_ms }}ms)
+{{ last.output }}</pre>
+{% endif %}
+
+<h2 class="font-semibold mb-2 text-slate-300">Komandalar tarixi</h2>
+<div class="space-y-1 text-sm font-mono max-h-72 overflow-auto">
+  {% for c in history %}
+  <div class="border-b border-slate-800 py-1">
+    <span class="text-slate-500">{{ c.created_at }}</span>
+    <span class="text-amber-300">$ {{ c.command }}</span>
+    <span class="text-slate-400">(exit {{ c.exit_code }})</span>
+  </div>
+  {% else %}<div class="text-slate-500">Tarix bo'sh.</div>{% endfor %}
+</div>
+{% endif %}
+{% endblock %}

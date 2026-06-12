@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% block title %}Audit — Orchestra{% endblock %}
+{% block content %}
+<h1 class="text-xl font-bold mb-4">Audit timeline</h1>
+<form method="get" action="/audit" class="mb-4">
+  <input name="q" value="{{ q }}" placeholder="action bo'yicha filtr (masalan ssh, login, task)"
+         class="px-3 py-2 rounded bg-slate-900 border border-slate-600 w-80">
+  <button class="bg-slate-700 px-3 py-2 rounded">Filtr</button>
+</form>
+<table class="w-full text-sm">
+  <thead class="text-slate-400 text-left border-b border-slate-700">
+    <tr><th class="py-2">Vaqt</th><th>Aktor</th><th>Amal</th><th>Obyekt</th></tr>
+  </thead>
+  <tbody>
+    {% for e in entries %}
+    <tr class="border-b border-slate-800">
+      <td class="py-1 text-slate-400">{{ e.created_at }}</td>
+      <td>{{ e.actor_type }} {{ (e.actor_id or '')[:8] }}</td>
+      <td class="text-emerald-300">{{ e.action }}</td>
+      <td><code>{{ (e.target or '')[:8] }}</code></td>
+    </tr>
+    {% else %}<tr><td colspan="4" class="text-slate-500 py-3">Yozuv yo'q.</td></tr>{% endfor %}
+  </tbody>
+</table>
+{% endblock %}
