@@ -11,6 +11,7 @@ testlar mock orqali ishlaydi). Guard hook mantig'i alohida funksiya sifatida ham
 from __future__ import annotations
 
 import json
+import os
 import re
 from typing import Any, Awaitable, Callable
 
@@ -185,6 +186,8 @@ async def run_agent(
     # ta'rifi, agent SIFATIDA ishlatmaydi). Har run_agent = bitta izolyatsiyalangan
     # sessiya: o'z system prompti + cheklangan tool to'plami.
     hooks = {"PreToolUse": [HookMatcher(matcher="Bash", hooks=[guard])]} if HookMatcher else None
+    # Agentlar ilova kodini (/app) o'zgartirmasligi uchun alohida ish katalogi.
+    workdir = os.environ.get("ORCHESTRA_WORKDIR") or None
     options = ClaudeAgentOptions(
         system_prompt=spec.system_prompt,
         allowed_tools=list(spec.tools),
@@ -192,6 +195,7 @@ async def run_agent(
         model=model,
         resume=session_id,
         hooks=hooks,
+        cwd=workdir,
     )
 
     stream = _sdk_query(prompt=prompt, options=options)

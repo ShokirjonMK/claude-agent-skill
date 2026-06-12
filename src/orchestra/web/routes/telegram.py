@@ -35,6 +35,7 @@ async def _context(request: Request, user, *, test_result: str | None = None) ->
     store = request.app.state.store
     token = await store.get_config("TG_BOT_TOKEN")
     chat_id = await store.get_config("TG_CHAT_ID")
+    allowed_ids = await store.get_config("TG_ALLOWED_IDS")
     enabled = _enabled(await store.get_config("TG_BOT_ENABLED", "1"))
     me = await _get_me(token)
     return {
@@ -42,6 +43,7 @@ async def _context(request: Request, user, *, test_result: str | None = None) ->
         "has_token": bool(token),
         "token_masked": _mask(token) if token else "",
         "chat_id": chat_id or "",
+        "allowed_ids": allowed_ids or "",
         "enabled": enabled,
         "me": me,
         "test_result": test_result,
@@ -59,6 +61,7 @@ async def telegram_save(
     request: Request,
     token: str = Form(""),
     chat_id: str = Form(""),
+    allowed_ids: str = Form(""),
     enabled: str = Form("off"),
     user=Depends(require_role(Role.ADMIN)),
 ):
@@ -67,6 +70,7 @@ async def telegram_save(
     if token.strip() and "•" not in token and "…" not in token:
         await store.set_secret("TG_BOT_TOKEN", token.strip(), by_user=user.id, is_secret=True)
     await store.set_secret("TG_CHAT_ID", chat_id.strip(), by_user=user.id, is_secret=False)
+    await store.set_secret("TG_ALLOWED_IDS", allowed_ids.strip(), by_user=user.id, is_secret=False)
     await store.set_secret(
         "TG_BOT_ENABLED", "1" if enabled == "on" else "0", by_user=user.id, is_secret=False
     )

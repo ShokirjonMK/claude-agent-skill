@@ -38,7 +38,8 @@ def web(tmp_path):
     async def _stop():
         await db.close()
 
-    with TestClient(app) as client:
+    # base_url https — Secure cookie test muhitida ham yuborilishi uchun.
+    with TestClient(app, base_url="https://testserver") as client:
         yield client
 
 

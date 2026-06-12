@@ -52,7 +52,7 @@ def test_web_connect_on_startup_seeds_admin(tmp_path):
     db = SQLiteDB(str(tmp_path / "web2.db"))
     store = SecretStore(db, settings)
     app = create_app(db, store, settings, connect_on_startup=True)
-    with TestClient(app) as client:
+    with TestClient(app, base_url="https://testserver") as client:
         r = client.post("/login", data={"username": "root", "password": "rootpass"})
         assert r.status_code == 200
         assert "Dashboard" in r.text

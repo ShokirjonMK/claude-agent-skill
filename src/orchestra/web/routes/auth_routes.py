@@ -33,7 +33,11 @@ async def login_submit(
     await db.touch_login(user.id)
     await db.log_audit(actor_type="user", actor_id=user.id, action="user.login", target=user.id)
     resp = RedirectResponse("/", status_code=303)
-    resp.set_cookie(COOKIE_NAME, token, httponly=True, samesite="lax")
+    # Secure: HTTPS ostida (Cloudflare Full strict) cookie faqat https orqali yuboriladi.
+    # httponly: JS o'qiy olmaydi (XSS himoyasi). samesite=lax: cross-site POST CSRF himoyasi.
+    resp.set_cookie(
+        COOKIE_NAME, token, httponly=True, samesite="lax", secure=True, max_age=24 * 3600
+    )
     return resp
 
 

@@ -17,5 +17,9 @@ COPY scripts ./scripts
 
 RUN pip install --no-cache-dir -e .
 
+# Agentlar ish katalogi (ilova kodidan ajratilgan).
+RUN mkdir -p /workspace
+ENV ORCHESTRA_WORKDIR=/workspace
+
 # Default: orchestrator. docker-compose har servis uchun CMD'ni ustun yozadi.
 CMD ["python", "-m", "orchestra.cli", "run"]

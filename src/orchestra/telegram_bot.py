@@ -41,11 +41,37 @@ class TelegramBot:
         # chat_id → suhbat rejimidagi task_id
         self._chat_mode: dict[str, str | None] = {}
 
+    async def _authorized(self, chat_id: str, user_id: str | None) -> bool:
+        """Faqat ruxsat berilgan chat/foydalanuvchilar botdan foydalanadi.
+
+        Ruxsat ro'yxati = {TG_CHAT_ID} ∪ TG_ALLOWED_IDS (vergul bilan). Ikkalasi ham
+        bo'sh bo'lsa — HAMMAGA RAD (xavfsiz default): aks holda notanish odam kod
+        ijro etadigan vazifa yuborishi mumkin edi."""
+        allowed: set[str] = set()
+        cid = await self._store.get_config("TG_CHAT_ID")
+        if cid:
+            allowed.add(str(cid).strip())
+        ids = await self._store.get_config("TG_ALLOWED_IDS")
+        if ids:
+            allowed |= {x.strip() for x in str(ids).split(",") if x.strip()}
+        if not allowed:
+            return False
+        return str(chat_id) in allowed or (user_id is not None and str(user_id) in allowed)
+
     async def on_message(
         self, chat_id: str, text: str, send: Send, *, user_id: str | None = None
     ) -> None:
         text = (text or "").strip()
         if not text:
+            return
+
+        # ── Avtorizatsiya: ruxsatsiz foydalanuvchilarni bloklash ──────────────
+        if not await self._authorized(chat_id, user_id):
+            await send("⛔ Ruxsat yo'q. Administrator sizni ruxsat ro'yxatiga qo'shishi kerak.")
+            await self._db.log_audit(
+                actor_type="system", actor_id=str(user_id), action="telegram.unauthorized",
+                details={"chat_id": chat_id},
+            )
             return
 
         if text.startswith("/"):
