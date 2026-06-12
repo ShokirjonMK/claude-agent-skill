@@ -1,6 +1,9 @@
 {% extends "base.html" %}
 {% block title %}SSH — Orchestra{% endblock %}
 {% block content %}
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/xterm@5.3.0/css/xterm.min.css">
+<script src="https://cdn.jsdelivr.net/npm/xterm@5.3.0/lib/xterm.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/xterm-addon-fit@0.8.0/lib/xterm-addon-fit.min.js"></script>
 <h1 class="text-xl font-bold mb-2">SSH boshqaruv</h1>
 <div class="bg-rose-900/40 text-rose-200 px-3 py-2 rounded mb-4 text-sm">
   ⚠️ To'liq cheklovsiz terminal — har komanda audit'ga yoziladi. Ehtiyot bo'ling.
@@ -26,6 +29,53 @@
 <pre class="bg-black text-green-300 p-3 rounded text-sm overflow-auto max-h-64 mb-4">exit={{ last.exit_code }} ({{ last.duration_ms }}ms)
 {{ last.output }}</pre>
 {% endif %}
+
+<div class="mb-6">
+  <div class="flex items-center gap-3 mb-2">
+    <h2 class="font-semibold text-slate-300">Interaktiv terminal</h2>
+    <button id="open-term" class="bg-emerald-700 hover:bg-emerald-600 px-3 py-1 rounded text-sm">Terminal ochish</button>
+    <span id="term-status" class="text-xs text-slate-500"></span>
+  </div>
+  <div id="term" class="rounded overflow-hidden border border-slate-700" style="height: 380px; display:none; background:#000;"></div>
+</div>
+
+<script>
+  (function () {
+    const serverId = {{ selected.id|tojson }};
+    const btn = document.getElementById('open-term');
+    const statusEl = document.getElementById('term-status');
+    const el = document.getElementById('term');
+    let term, fit, ws;
+
+    btn.addEventListener('click', function () {
+      if (ws) return;
+      el.style.display = 'block';
+      term = new Terminal({ convertEol: true, cursorBlink: true, fontSize: 13 });
+      fit = new FitAddon.FitAddon();
+      term.loadAddon(fit);
+      term.open(el);
+      fit.fit();
+
+      const proto = location.protocol === 'https:' ? 'wss' : 'ws';
+      ws = new WebSocket(`${proto}://${location.host}/ssh/${serverId}/terminal`);
+
+      ws.onopen = function () {
+        statusEl.textContent = 'ulandi';
+        ws.send(JSON.stringify({ type: 'resize', cols: term.cols, rows: term.rows }));
+        term.focus();
+      };
+      ws.onmessage = (e) => term.write(e.data);
+      ws.onclose = () => { statusEl.textContent = 'uzildi'; ws = null; };
+
+      term.onData((d) => ws && ws.readyState === 1 && ws.send(JSON.stringify({ type: 'data', data: d })));
+      window.addEventListener('resize', function () {
+        if (!fit || !ws || ws.readyState !== 1) return;
+        fit.fit();
+        ws.send(JSON.stringify({ type: 'resize', cols: term.cols, rows: term.rows }));
+      });
+    });
+  })();
+</script>
 
 <h2 class="font-semibold mb-2 text-slate-300">Komandalar tarixi</h2>
 <div class="space-y-1 text-sm font-mono max-h-72 overflow-auto">

@@ -82,8 +82,12 @@ class SSHManager:
         await self._db.log_audit(
             actor_type="user", actor_id=user_id, action="ssh.terminal.open", target=server.id
         )
+        import json
+
         conn = await self._connect(server)
-        proc = await conn.create_process(term_type="xterm", stdin=asyncssh.PIPE)
+        proc = await conn.create_process(
+            term_type="xterm", term_size=(80, 24), stdin=asyncssh.PIPE
+        )
 
         async def pump_out():
             try:
@@ -98,8 +102,22 @@ class SSHManager:
         out_task = asyncio.create_task(pump_out())
         try:
             while True:
-                msg = await websocket.receive_text()
-                proc.stdin.write(msg)
+                raw = await websocket.receive_text()
+                # Frontend har xabarni JSON sifatida yuboradi: {"type":"data"|"resize", ...}
+                try:
+                    msg = json.loads(raw)
+                except (ValueError, TypeError):
+                    proc.stdin.write(raw)
+                    continue
+                if msg.get("type") == "resize":
+                    try:
+                        proc.change_terminal_size(
+                            int(msg.get("cols", 80)), int(msg.get("rows", 24))
+                        )
+                    except Exception:
+                        pass
+                else:
+                    proc.stdin.write(msg.get("data", ""))
         except Exception:
             pass
         finally:

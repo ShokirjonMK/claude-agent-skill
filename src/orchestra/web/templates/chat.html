@@ -1,0 +1,71 @@
+{% extends "base.html" %}
+{% block title %}Chat — Orchestra{% endblock %}
+{% block content %}
+<h1 class="text-xl font-bold mb-4">Agent bilan suhbat</h1>
+
+<div class="flex gap-2 mb-4 flex-wrap items-center">
+  <a href="/chat?task=general"
+     class="px-3 py-1 rounded {{ 'bg-emerald-700' if channel == 'general' else 'bg-slate-700' }}">
+    Erkin suhbat
+  </a>
+  {% for t in tasks %}
+  <a href="/chat?task={{ t.id }}"
+     class="px-3 py-1 rounded text-sm {{ 'bg-emerald-700' if selected and selected.id == t.id else 'bg-slate-700' }}">
+    {{ t.title[:24] }}
+  </a>
+  {% endfor %}
+</div>
+
+<div class="bg-slate-800 rounded-xl border border-slate-700 p-4">
+  <div id="messages" class="space-y-2 text-sm max-h-96 overflow-auto mb-3">
+    {% for m in history %}
+    <div class="{{ 'text-sky-300' if m.role == 'user' else 'text-emerald-300' }}">
+      <b>{{ m.role }}:</b> {{ m.content }}
+    </div>
+    {% else %}
+    <div class="text-slate-500">Suhbatni boshlang…</div>
+    {% endfor %}
+  </div>
+  <form id="chat-form" class="flex gap-2">
+    <input id="msg" autocomplete="off" placeholder="Xabaringiz…" autofocus
+           class="flex-1 px-3 py-2 rounded bg-slate-900 border border-slate-600">
+    <button class="bg-emerald-600 hover:bg-emerald-500 px-4 rounded font-semibold">Yuborish</button>
+  </form>
+  <div id="status" class="text-xs text-slate-500 mt-2"></div>
+</div>
+
+<script>
+  const channel = {{ channel|tojson }};
+  const box = document.getElementById('messages');
+  const statusEl = document.getElementById('status');
+  const proto = location.protocol === 'https:' ? 'wss' : 'ws';
+  let ws;
+
+  function addMsg(role, text) {
+    const d = document.createElement('div');
+    d.className = role === 'user' ? 'text-sky-300' : 'text-emerald-300';
+    d.innerHTML = '<b>' + role + ':</b> ' + text.replace(/</g, '&lt;');
+    box.appendChild(d);
+    box.scrollTop = box.scrollHeight;
+  }
+
+  function connect() {
+    ws = new WebSocket(`${proto}://${location.host}/chat/${channel}/ws`);
+    ws.onopen = () => statusEl.textContent = 'ulandi';
+    ws.onclose = () => { statusEl.textContent = 'uzildi — qayta ulanmoqda…'; setTimeout(connect, 2000); };
+    ws.onmessage = (ev) => { addMsg('agent', ev.data); statusEl.textContent = 'tayyor'; };
+  }
+  connect();
+
+  document.getElementById('chat-form').addEventListener('submit', (e) => {
+    e.preventDefault();
+    const inp = document.getElementById('msg');
+    const text = inp.value.trim();
+    if (!text || ws.readyState !== 1) return;
+    addMsg('user', text);
+    ws.send(text);
+    inp.value = '';
+    statusEl.textContent = 'agent o\'ylayapti…';
+  });
+</script>
+{% endblock %}

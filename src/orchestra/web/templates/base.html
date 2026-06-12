@@ -13,6 +13,9 @@
     <span class="font-bold text-emerald-400">🎼 Orchestra</span>
     <a href="/" class="hover:text-emerald-400">Dashboard</a>
     <a href="/tasks" class="hover:text-emerald-400">Vazifalar</a>
+    {% if user.role.value in ['operator', 'admin'] %}
+    <a href="/chat" class="hover:text-emerald-400">Chat</a>
+    {% endif %}
     <a href="/audit" class="hover:text-emerald-400">Audit</a>
     {% if user.role.value == 'admin' %}
     <a href="/servers" class="hover:text-amber-400">Serverlar</a>

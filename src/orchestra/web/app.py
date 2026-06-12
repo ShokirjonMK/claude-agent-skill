@@ -43,6 +43,7 @@ def create_app(
     from .routes import (
         audit,
         auth_routes,
+        chat,
         dashboard,
         secrets as secrets_routes,
         servers,
@@ -53,7 +54,7 @@ def create_app(
     )
 
     for mod in (
-        auth_routes, dashboard, tasks, audit, stream,
+        auth_routes, dashboard, tasks, audit, stream, chat,
         ssh, servers, secrets_routes, users,
     ):
         app.include_router(mod.router)
