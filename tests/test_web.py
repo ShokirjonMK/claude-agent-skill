@@ -104,6 +104,18 @@ def test_audit_records_login(web):
     assert "user.login" in web.get("/audit").text
 
 
+def test_chat_page_requires_operator(web):
+    login(web, "viewer", "view123")
+    assert web.get("/chat").status_code == 403
+
+
+def test_admin_can_open_chat(web):
+    login(web, "admin", "admin123")
+    r = web.get("/chat")
+    assert r.status_code == 200
+    assert "suhbat" in r.text.lower()
+
+
 def test_logout_clears_session(web):
     login(web, "admin", "admin123")
     web.get("/logout")
