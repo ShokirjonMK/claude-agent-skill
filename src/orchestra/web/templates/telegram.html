@@ -1,64 +1,62 @@
 {% extends "base.html" %}
-{% block title %}Telegram bot — Orchestra{% endblock %}
+{% block title %}Telegram — Orchestra{% endblock %}
+{% block page_title %}Telegram bot{% endblock %}
 {% block content %}
-<h1 class="text-xl font-bold mb-4">Telegram bot boshqaruvi</h1>
 
-<!-- Holat kartasi -->
-<div class="bg-slate-800 rounded-xl border border-slate-700 p-4 mb-4">
-  <h2 class="font-semibold mb-2 text-emerald-400">Holat</h2>
-  {% if not has_token %}
-    <p class="text-slate-400">🔴 Token kiritilmagan. Quyida tokenni kiriting.</p>
-  {% elif me and me.error %}
-    <p class="text-rose-300">🔴 Token noto'g'ri: {{ me.error }}</p>
-  {% elif me %}
-    <p class="text-emerald-300">🟢 Ulangan: <b>@{{ me.username }}</b> ({{ me.first_name }}) · id {{ me.id }}</p>
-    <p class="text-slate-400 text-sm mt-1">
-      Bot {{ 'YOQILGAN ✅' if enabled else 'O\'CHIRILGAN ⛔' }} ·
-      Chat ID: {{ chat_id or '— (kiritilmagan)' }}
-    </p>
-  {% endif %}
+<!-- Holat -->
+<div class="card p-5 mb-5">
+  <div class="flex items-center gap-3">
+    <div class="w-11 h-11 rounded-2xl flex items-center justify-center" style="background:linear-gradient(135deg,#229ED9,#22d3ee)">
+      <i data-lucide="send" class="text-white" style="width:22px;height:22px"></i>
+    </div>
+    <div class="flex-1">
+      {% if not has_token %}
+        <div class="font-semibold">🔴 Token kiritilmagan</div>
+        <div class="text-sm" style="color:var(--muted)">Quyida @BotFather tokenini kiriting.</div>
+      {% elif me and me.error %}
+        <div class="font-semibold" style="color:var(--bad)">🔴 Token noto'g'ri</div>
+        <div class="text-sm" style="color:var(--muted)">{{ me.error }}</div>
+      {% elif me %}
+        <div class="font-semibold" style="color:var(--ok)">🟢 Ulangan: @{{ me.username }}</div>
+        <div class="text-sm" style="color:var(--muted)">{{ me.first_name }} · id {{ me.id }} · {{ 'YOQILGAN' if enabled else "O'CHIRILGAN" }}</div>
+      {% endif %}
+    </div>
+    <span class="badge {{ 'b-done' if (me and not me.error) else 'b-failed' }}">{{ 'online' if (me and not me.error) else 'offline' }}</span>
+  </div>
   {% if test_result %}
-  <div class="mt-3 px-3 py-2 rounded bg-slate-900 border border-slate-600 text-sm">{{ test_result }}</div>
+  <div class="mt-4 px-4 py-3 rounded-xl text-sm" style="background:rgba(124,131,255,.07);border:1px solid var(--border)">{{ test_result }}</div>
   {% endif %}
 </div>
 
-<!-- Sozlamalar formasi -->
-<form method="post" action="/telegram" class="bg-slate-800 rounded-xl border border-slate-700 p-4 space-y-3 mb-4">
+<!-- Sozlamalar -->
+<form method="post" action="/telegram" class="card p-5 space-y-4 mb-4">
   <div>
-    <label class="block text-sm text-slate-400 mb-1">Bot token (@BotFather'dan)</label>
-    <input name="token" autocomplete="off"
-           placeholder="{{ token_masked or '123456:ABC-DEF...' }}"
-           class="w-full px-3 py-2 rounded bg-slate-900 border border-slate-600 font-mono">
-    <p class="text-xs text-slate-500 mt-1">Mavjud token: <code>{{ token_masked or '—' }}</code>. O'zgartirmasangiz bo'sh qoldiring.</p>
+    <label class="lbl">Bot token (@BotFather'dan)</label>
+    <input name="token" autocomplete="off" placeholder="{{ token_masked or '123456:ABC-DEF…' }}" class="input mono">
+    <p class="text-xs mt-1.5" style="color:var(--faint)">Mavjud: <code>{{ token_masked or '—' }}</code>. O'zgartirmasangiz bo'sh qoldiring.</p>
   </div>
   <div>
-    <label class="block text-sm text-slate-400 mb-1">Chat ID (hisobotlar yuboriladigan)</label>
-    <input name="chat_id" value="{{ chat_id }}" placeholder="masalan -1001234567890 yoki shaxsiy chat id"
-           class="w-full px-3 py-2 rounded bg-slate-900 border border-slate-600 font-mono">
+    <label class="lbl">Chat ID (hisobotlar yuboriladigan)</label>
+    <input name="chat_id" value="{{ chat_id }}" placeholder="-1001234567890 yoki shaxsiy chat id" class="input mono">
   </div>
   <div>
-    <label class="block text-sm text-slate-400 mb-1">Ruxsat ro'yxati (allowlist) — vergul bilan chat/user id'lar</label>
-    <input name="allowed_ids" value="{{ allowed_ids }}" placeholder="masalan 123456789, -1001234567890"
-           class="w-full px-3 py-2 rounded bg-slate-900 border border-slate-600 font-mono">
-    <p class="text-xs text-amber-400 mt-1">⚠️ Bo'sh bo'lsa faqat yuqoridagi Chat ID ruxsatli. Hech biri bo'lmasa — bot hammaga rad etadi (xavfsiz).</p>
+    <label class="lbl">Ruxsat ro'yxati (allowlist) — vergul bilan chat/user id'lar</label>
+    <input name="allowed_ids" value="{{ allowed_ids }}" placeholder="123456789, -1001234567890" class="input mono">
+    <p class="text-xs mt-1.5" style="color:var(--warn)">⚠️ Bo'sh bo'lsa faqat yuqoridagi Chat ID ruxsatli. Hech biri bo'lmasa — bot hammaga rad etadi (xavfsiz).</p>
   </div>
-  <label class="flex items-center gap-2 text-sm">
-    <input type="checkbox" name="enabled" {% if enabled %}checked{% endif %}> Botni yoqish
+  <label class="flex items-center gap-2.5 text-sm cursor-pointer">
+    <input type="checkbox" name="enabled" {% if enabled %}checked{% endif %} class="w-4 h-4 accent-indigo-500"> Botni yoqish
   </label>
-  <button class="bg-emerald-600 hover:bg-emerald-500 px-4 py-2 rounded font-semibold">Saqlash</button>
+  <div class="flex gap-2 pt-1">
+    <button class="btn btn-primary"><i data-lucide="save" style="width:17px;height:17px"></i> Saqlash</button>
+    <button formaction="/telegram/test" class="btn btn-ghost"><i data-lucide="zap" style="width:17px;height:17px"></i> Test + xabar</button>
+  </div>
 </form>
 
-<!-- Test tugmasi -->
-<form method="post" action="/telegram/test">
-  <button class="bg-amber-600 hover:bg-amber-500 px-4 py-2 rounded font-semibold">
-    Ulanishni test qilish + xabar yuborish
-  </button>
-</form>
-
-<div class="mt-6 text-sm text-slate-400 space-y-1">
-  <p class="font-semibold text-slate-300">Qanday olish:</p>
-  <p>1. Telegram'da <b>@BotFather</b> → <code>/newbot</code> → token oling.</p>
-  <p>2. Chat ID: botga yozing, so'ng <b>@userinfobot</b> yoki <code>getUpdates</code> orqali chat id ni oling.</p>
-  <p>3. Yuqorida saqlang → bot avtomatik ulanadi. Buyruqlar: <code>/task</code>, <code>/status</code>, <code>/tasks</code>, <code>/chat</code>, <code>/endchat</code>.</p>
+<div class="card p-5 text-sm" style="color:var(--muted)">
+  <div class="font-semibold mb-2" style="color:var(--text)">Qanday olish</div>
+  <p>1. Telegram'da <b>@BotFather</b> → <code>/newbot</code> → token.</p>
+  <p>2. Chat ID: botga yozing, <b>@userinfobot</b> orqali id ni oling.</p>
+  <p>3. Saqlang → bot avtomatik ulanadi. Buyruqlar: <code>/task</code> <code>/status</code> <code>/tasks</code> <code>/chat</code> <code>/endchat</code></p>
 </div>
 {% endblock %}

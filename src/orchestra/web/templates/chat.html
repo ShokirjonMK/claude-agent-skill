@@ -1,71 +1,70 @@
 {% extends "base.html" %}
 {% block title %}Chat — Orchestra{% endblock %}
+{% block page_title %}Agent bilan suhbat{% endblock %}
 {% block content %}
-<h1 class="text-xl font-bold mb-4">Agent bilan suhbat</h1>
 
 <div class="flex gap-2 mb-4 flex-wrap items-center">
-  <a href="/chat?task=general"
-     class="px-3 py-1 rounded {{ 'bg-emerald-700' if channel == 'general' else 'bg-slate-700' }}">
-    Erkin suhbat
+  <a href="/chat?task=general" class="btn btn-sm {{ 'btn-primary' if channel == 'general' else 'btn-ghost' }}">
+    <i data-lucide="sparkles" style="width:15px;height:15px"></i> Erkin suhbat
   </a>
   {% for t in tasks %}
-  <a href="/chat?task={{ t.id }}"
-     class="px-3 py-1 rounded text-sm {{ 'bg-emerald-700' if selected and selected.id == t.id else 'bg-slate-700' }}">
-    {{ t.title[:24] }}
-  </a>
+  <a href="/chat?task={{ t.id }}" class="btn btn-sm {{ 'btn-primary' if selected and selected.id == t.id else 'btn-ghost' }}">{{ t.title[:22] }}</a>
   {% endfor %}
 </div>
 
-<div class="bg-slate-800 rounded-xl border border-slate-700 p-4">
-  <div id="messages" class="space-y-2 text-sm max-h-96 overflow-auto mb-3">
+<div class="card p-5">
+  <div id="messages" class="space-y-3 text-sm max-h-[55vh] overflow-auto mb-4 pr-1">
     {% for m in history %}
-    <div class="{{ 'text-sky-300' if m.role == 'user' else 'text-emerald-300' }}">
-      <b>{{ m.role }}:</b> {{ m.content }}
+    <div class="flex gap-2.5 {{ 'flex-row-reverse' if m.role=='user' }}">
+      <div class="w-7 h-7 rounded-full shrink-0 flex items-center justify-center text-xs font-bold"
+           style="background:{{ 'linear-gradient(135deg,#22d3ee,#6366f1)' if m.role=='user' else 'linear-gradient(135deg,#34d399,#10b981)' }};color:#fff">
+        {{ 'S' if m.role=='user' else 'A' }}
+      </div>
+      <div class="px-3.5 py-2.5 rounded-2xl max-w-[75%]" style="background:{{ 'rgba(99,102,241,.14)' if m.role=='user' else 'rgba(52,211,153,.10)' }}">{{ m.content }}</div>
     </div>
     {% else %}
-    <div class="text-slate-500">Suhbatni boshlang…</div>
+    <div class="text-center py-8" style="color:var(--muted)">Suhbatni boshlang…</div>
     {% endfor %}
   </div>
   <form id="chat-form" class="flex gap-2">
-    <input id="msg" autocomplete="off" placeholder="Xabaringiz…" autofocus
-           class="flex-1 px-3 py-2 rounded bg-slate-900 border border-slate-600">
-    <button class="bg-emerald-600 hover:bg-emerald-500 px-4 rounded font-semibold">Yuborish</button>
+    <input id="msg" autocomplete="off" placeholder="Xabaringiz…" autofocus class="input flex-1">
+    <button class="btn btn-primary"><i data-lucide="send-horizontal" style="width:18px;height:18px"></i></button>
   </form>
-  <div id="status" class="text-xs text-slate-500 mt-2"></div>
+  <div id="status" class="text-xs mt-2" style="color:var(--muted)"></div>
 </div>
+{% endblock %}
 
+{% block scripts %}
 <script>
   const channel = {{ channel|tojson }};
   const box = document.getElementById('messages');
   const statusEl = document.getElementById('status');
   const proto = location.protocol === 'https:' ? 'wss' : 'ws';
   let ws;
-
-  function addMsg(role, text) {
-    const d = document.createElement('div');
-    d.className = role === 'user' ? 'text-sky-300' : 'text-emerald-300';
-    d.innerHTML = '<b>' + role + ':</b> ' + text.replace(/</g, '&lt;');
-    box.appendChild(d);
-    box.scrollTop = box.scrollHeight;
+  function bubble(role, text){
+    const wrap=document.createElement('div');
+    wrap.className='flex gap-2.5 '+(role==='user'?'flex-row-reverse':'');
+    const av=document.createElement('div');
+    av.className='w-7 h-7 rounded-full shrink-0 flex items-center justify-center text-xs font-bold';
+    av.style.cssText='color:#fff;background:'+(role==='user'?'linear-gradient(135deg,#22d3ee,#6366f1)':'linear-gradient(135deg,#34d399,#10b981)');
+    av.textContent=role==='user'?'S':'A';
+    const b=document.createElement('div');
+    b.className='px-3.5 py-2.5 rounded-2xl max-w-[75%]';
+    b.style.background=role==='user'?'rgba(99,102,241,.14)':'rgba(52,211,153,.10)';
+    b.textContent=text; wrap.append(av,b); box.append(wrap); box.scrollTop=box.scrollHeight;
   }
-
-  function connect() {
-    ws = new WebSocket(`${proto}://${location.host}/chat/${channel}/ws`);
-    ws.onopen = () => statusEl.textContent = 'ulandi';
-    ws.onclose = () => { statusEl.textContent = 'uzildi — qayta ulanmoqda…'; setTimeout(connect, 2000); };
-    ws.onmessage = (ev) => { addMsg('agent', ev.data); statusEl.textContent = 'tayyor'; };
+  function connect(){
+    ws=new WebSocket(`${proto}://${location.host}/chat/${channel}/ws`);
+    ws.onopen=()=>statusEl.textContent='● ulandi';
+    ws.onclose=()=>{statusEl.textContent='○ uzildi — qayta ulanmoqda…';setTimeout(connect,2000);};
+    ws.onmessage=(ev)=>{bubble('agent',ev.data);statusEl.textContent='tayyor';};
   }
   connect();
-
-  document.getElementById('chat-form').addEventListener('submit', (e) => {
+  document.getElementById('chat-form').addEventListener('submit',(e)=>{
     e.preventDefault();
-    const inp = document.getElementById('msg');
-    const text = inp.value.trim();
-    if (!text || ws.readyState !== 1) return;
-    addMsg('user', text);
-    ws.send(text);
-    inp.value = '';
-    statusEl.textContent = 'agent o\'ylayapti…';
+    const inp=document.getElementById('msg'); const t=inp.value.trim();
+    if(!t||ws.readyState!==1)return;
+    bubble('user',t); ws.send(t); inp.value=''; statusEl.textContent="agent o'ylayapti…";
   });
 </script>
 {% endblock %}

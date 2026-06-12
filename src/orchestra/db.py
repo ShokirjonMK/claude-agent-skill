@@ -258,6 +258,13 @@ class AsyncDB(abc.ABC):
         )
         return [_task_from_row(r) for r in rows]
 
+    async def status_counts(self) -> dict[str, int]:
+        """Root vazifalar holatlari bo'yicha hisob (dashboard statistikasi uchun)."""
+        rows = await self._fetchall(
+            "SELECT status, COUNT(*) AS n FROM tasks WHERE kind = 'root' GROUP BY status"
+        )
+        return {r["status"]: int(r["n"]) for r in rows}
+
     async def has_subtasks(self, parent_id: str) -> bool:
         """Resume idempotentligi uchun: root allaqachon rejalashtirilganmi."""
         row = await self._fetchone(

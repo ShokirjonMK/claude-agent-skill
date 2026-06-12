@@ -1,40 +1,92 @@
 {% extends "base.html" %}
 {% block title %}Dashboard — Orchestra{% endblock %}
+{% block page_title %}Dashboard{% endblock %}
 {% block content %}
-<h1 class="text-xl font-bold mb-4">Dashboard</h1>
 
-<div class="grid md:grid-cols-2 gap-6">
-  <section class="bg-slate-800 rounded-xl border border-slate-700 p-4">
-    <h2 class="font-semibold mb-3 text-emerald-400">Faol agentlar</h2>
-    <div id="agents" class="space-y-1 text-sm">
-      {% for r in runs %}
-      <div class="flex justify-between"><span>🤖 {{ r.role }} <code class="text-slate-400">{{ r.id }}</code></span><span class="text-slate-400">{{ r.status }}</span></div>
-      {% else %}<div class="text-slate-500">Hozircha faol agent yo'q.</div>{% endfor %}
+<!-- Stat tiles -->
+<div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+  <div class="stat">
+    <div class="flex items-center justify-between">
+      <span class="num">{{ stats.total }}</span>
+      <i data-lucide="layers" style="width:22px;height:22px;color:var(--accent)"></i>
     </div>
-  </section>
-
-  <section class="bg-slate-800 rounded-xl border border-slate-700 p-4">
-    <h2 class="font-semibold mb-3 text-emerald-400">Vazifalar</h2>
-    <div class="space-y-1 text-sm">
-      {% for t in tasks %}
-      <a href="/tasks/{{ t.id }}" class="flex justify-between hover:bg-slate-700 px-2 py-1 rounded">
-        <span>{{ t.title[:48] }}</span>
-        <span class="text-slate-400">{{ t.status.value }}</span>
-      </a>
-      {% else %}<div class="text-slate-500">Vazifalar yo'q.</div>{% endfor %}
+    <div class="lbl">Jami vazifalar</div>
+  </div>
+  <div class="stat">
+    <div class="flex items-center justify-between">
+      <span class="num" style="color:var(--warn)">{{ stats.active }}</span>
+      <i data-lucide="loader" style="width:22px;height:22px;color:var(--warn)"></i>
     </div>
-  </section>
+    <div class="lbl">Faol / jarayonda</div>
+  </div>
+  <div class="stat">
+    <div class="flex items-center justify-between">
+      <span class="num" style="color:var(--ok)">{{ stats.done }}</span>
+      <i data-lucide="circle-check-big" style="width:22px;height:22px;color:var(--ok)"></i>
+    </div>
+    <div class="lbl">Bajarildi</div>
+  </div>
+  <div class="stat">
+    <div class="flex items-center justify-between">
+      <span class="num" style="color:var(--bad)">{{ stats.failed }}</span>
+      <i data-lucide="circle-x" style="width:22px;height:22px;color:var(--bad)"></i>
+    </div>
+    <div class="lbl">Muvaffaqiyatsiz</div>
+  </div>
 </div>
 
-<section class="bg-slate-800 rounded-xl border border-slate-700 p-4 mt-6">
-  <h2 class="font-semibold mb-3 text-emerald-400">Real-vaqt oqim</h2>
-  <div id="live" class="space-y-1 text-sm font-mono max-h-72 overflow-auto">
+<div class="grid lg:grid-cols-3 gap-5">
+  <!-- Tasks -->
+  <div class="card p-5 lg:col-span-2">
+    <div class="flex items-center justify-between mb-4">
+      <h2 class="font-semibold flex items-center gap-2"><i data-lucide="list-checks" style="width:18px;height:18px;color:var(--accent)"></i> So'nggi vazifalar</h2>
+      <a href="/tasks" class="text-sm" style="color:var(--accent)">Barchasi →</a>
+    </div>
+    <div class="space-y-1">
+      {% for t in tasks %}
+      <a href="/tasks/{{ t.id }}" class="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-white/5 transition">
+        <i data-lucide="file-text" style="width:16px;height:16px;color:var(--muted)"></i>
+        <span class="flex-1 truncate text-sm">{{ t.title[:60] }}</span>
+        <span class="badge b-{{ t.status.value|lower }}">{{ t.status.value }}</span>
+      </a>
+      {% else %}
+      <div class="text-sm py-8 text-center" style="color:var(--muted)">Hozircha vazifa yo'q. <a href="/tasks" style="color:var(--accent)">Yaratish →</a></div>
+      {% endfor %}
+    </div>
+  </div>
+
+  <!-- Active agents -->
+  <div class="card p-5">
+    <h2 class="font-semibold flex items-center gap-2 mb-4"><i data-lucide="bot" style="width:18px;height:18px;color:var(--accent2)"></i> Faol agentlar</h2>
+    <div id="agents" class="space-y-2">
+      {% for r in runs %}
+      <div class="flex items-center gap-2.5 text-sm">
+        <span class="w-2 h-2 rounded-full animate-pulse" style="background:var(--ok)"></span>
+        <span class="font-medium">{{ r.role }}</span>
+        <code class="text-xs" style="color:var(--muted)">{{ r.id }}</code>
+      </div>
+      {% else %}
+      <div class="text-sm" style="color:var(--muted)">Hozircha faol agent yo'q.</div>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+
+<!-- Live feed -->
+<div class="card p-5 mt-5">
+  <h2 class="font-semibold flex items-center gap-2 mb-3">
+    <span class="w-2 h-2 rounded-full animate-pulse" style="background:var(--ok)"></span>
+    Real-vaqt oqim
+  </h2>
+  <div id="live" class="glass-feed space-y-1.5 max-h-80 overflow-auto pr-1">
     {% for e in events %}
-    <div class="text-slate-300">[{{ e.status }}] {{ e.agent_id or '' }} — {{ e.message }}</div>
+    <div style="color:var(--muted)"><span style="color:var(--accent2)">[{{ e.status }}]</span> {{ e.agent_id or '' }} — {{ e.message }}</div>
     {% endfor %}
   </div>
-</section>
+</div>
+{% endblock %}
 
+{% block scripts %}
 <script>
   const box = document.getElementById('live');
   const es = new EventSource('/events/stream');
@@ -42,10 +94,11 @@
     try {
       const d = JSON.parse(ev.data);
       const line = document.createElement('div');
-      line.className = 'text-emerald-300';
-      line.textContent = `[${d.type}] ${d.role||''} ${d.agent_id||''} — ${d.status||d.text||''}`;
+      line.style.color = 'var(--text)';
+      line.innerHTML = `<span style="color:var(--accent2)">[${d.role||d.type}]</span> ${d.agent_id||''} — ${(d.status||d.text||'')}`;
       box.prepend(line);
-    } catch (e) {}
+      while (box.children.length > 120) box.removeChild(box.lastChild);
+    } catch(e){}
   };
 </script>
 {% endblock %}

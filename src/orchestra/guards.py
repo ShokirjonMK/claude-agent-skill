@@ -27,6 +27,17 @@ DEFAULT_DANGEROUS: list[str] = [
     r"\bchown\s+-R\b[^\n]*\s+/\s*$",
     r"\b(userdel|deluser)\b",
     r"\biptables\s+-F\b",
+    # Reverse-shell / eksfiltratsiya naqshlari
+    r"/dev/(tcp|udp)/",
+    r"\bnc\b[^\n]*-e",
+    r"\bncat\b",
+    r"\bsocat\b",
+    r"\bmkfifo\b",
+    # Mount qilingan obuna credential'iga kirishni bloklash (token o'g'irligi himoyasi)
+    r"\.credentials\.json",
+    r"/root/\.claude",
+    r"\$HOME/\.claude",
+    r"~/\.claude",
 ]
 
 

@@ -1,37 +1,40 @@
 {% extends "base.html" %}
 {% block title %}Foydalanuvchilar — Orchestra{% endblock %}
+{% block page_title %}Foydalanuvchilar va rollar{% endblock %}
 {% block content %}
-<h1 class="text-xl font-bold mb-4">Foydalanuvchilar va rollar</h1>
 
-<form method="post" action="/users" class="grid md:grid-cols-4 gap-2 mb-6 bg-slate-800 p-4 rounded-xl border border-slate-700">
-  <input name="username" placeholder="Login" required class="px-3 py-2 rounded bg-slate-900 border border-slate-600">
-  <input name="password" type="password" placeholder="Parol" required class="px-3 py-2 rounded bg-slate-900 border border-slate-600">
-  <select name="role" class="px-3 py-2 rounded bg-slate-900 border border-slate-600">
+<form method="post" action="/users" class="card p-5 grid sm:grid-cols-2 lg:grid-cols-4 gap-3 mb-6">
+  <input name="username" placeholder="Login" required class="input">
+  <input name="password" type="password" placeholder="Parol" required class="input">
+  <select name="role" class="input">
     <option value="viewer">viewer</option>
     <option value="operator">operator</option>
     <option value="admin">admin</option>
   </select>
-  <button class="bg-amber-600 hover:bg-amber-500 px-4 rounded font-semibold">Qo'shish</button>
+  <button class="btn btn-primary justify-center"><i data-lucide="user-plus" style="width:17px;height:17px"></i> Qo'shish</button>
 </form>
 
-<table class="w-full text-sm">
-  <thead class="text-slate-400 text-left border-b border-slate-700">
-    <tr><th class="py-2">Login</th><th>Rol</th><th>Holat</th><th>Oxirgi kirish</th><th></th></tr>
-  </thead>
-  <tbody>
-    {% for u in users %}
-    <tr class="border-b border-slate-800">
-      <td class="py-2">{{ u.username }}</td>
-      <td>{{ u.role.value }}</td>
-      <td>{{ 'faol' if u.is_active else 'o''chiq' }}</td>
-      <td class="text-slate-500">{{ u.last_login or '—' }}</td>
-      <td>
-        {% if u.id != user.id %}
-        <form method="post" action="/users/{{ u.id }}/delete"><button class="text-rose-400">O'chirish</button></form>
-        {% else %}<span class="text-slate-600">(siz)</span>{% endif %}
-      </td>
-    </tr>
-    {% endfor %}
-  </tbody>
-</table>
+<div class="card overflow-hidden">
+  <table class="tbl">
+    <thead><tr><th>Login</th><th>Rol</th><th>Holat</th><th>Oxirgi kirish</th><th></th></tr></thead>
+    <tbody>
+      {% for u in users %}
+      <tr>
+        <td class="font-medium flex items-center gap-2.5">
+          <span class="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold" style="background:linear-gradient(135deg,#6366f1,#22d3ee);color:#fff">{{ u.username[0]|upper }}</span>
+          {{ u.username }}
+        </td>
+        <td><span class="badge {{ 'b-done' if u.role.value=='admin' else ('b-executing' if u.role.value=='operator' else 'b-pending') }}">{{ u.role.value }}</span></td>
+        <td>{{ 'faol' if u.is_active else "o'chiq" }}</td>
+        <td style="color:var(--muted)" class="text-[13px]">{{ (u.last_login or '—')[:19] }}</td>
+        <td class="text-right">
+          {% if u.id != user.id %}
+          <form method="post" action="/users/{{ u.id }}/delete"><button class="btn btn-danger btn-sm"><i data-lucide="trash-2" style="width:15px;height:15px"></i></button></form>
+          {% else %}<span class="text-xs" style="color:var(--faint)">siz</span>{% endif %}
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
 {% endblock %}

@@ -1,21 +1,46 @@
 {% extends "base.html" %}
 {% block title %}Kirish — Orchestra{% endblock %}
-{% block content %}
-<div class="max-w-sm mx-auto mt-20 bg-slate-800 p-8 rounded-xl border border-slate-700">
-  <h1 class="text-2xl font-bold mb-6 text-emerald-400">🎼 Orchestra</h1>
-  {% if error %}
-  <div class="bg-rose-900/50 text-rose-200 px-3 py-2 rounded mb-4 text-sm">
-    Login yoki parol noto'g'ri.
+{% block content_guest %}
+<div class="min-h-screen flex items-center justify-center p-5">
+  <div class="w-full max-w-[400px]">
+    <div class="flex items-center justify-center gap-3 mb-7">
+      <div class="w-12 h-12 rounded-2xl flex items-center justify-center" style="background:var(--grad)">
+        <i data-lucide="boxes" class="text-white" style="width:26px;height:26px"></i>
+      </div>
+      <div>
+        <div class="font-extrabold text-2xl tracking-tight">Orchestra</div>
+        <div class="text-xs" style="color:var(--muted)">multi-agent orkestratsiya</div>
+      </div>
+    </div>
+
+    <div class="card p-7">
+      <h1 class="text-lg font-bold mb-1">Xush kelibsiz 👋</h1>
+      <p class="text-sm mb-5" style="color:var(--muted)">Davom etish uchun tizimga kiring</p>
+
+      {% if error %}
+      <div class="flex items-center gap-2 px-3.5 py-2.5 rounded-xl mb-4 text-sm"
+           style="background:rgba(251,113,133,.12);color:var(--bad)">
+        <i data-lucide="shield-alert" style="width:16px;height:16px"></i>
+        Login yoki parol noto'g'ri.
+      </div>
+      {% endif %}
+
+      <form method="post" action="/login" class="space-y-4">
+        <div>
+          <label class="lbl">Foydalanuvchi</label>
+          <input name="username" autofocus placeholder="admin" class="input">
+        </div>
+        <div>
+          <label class="lbl">Parol</label>
+          <input name="password" type="password" placeholder="••••••••" class="input">
+        </div>
+        <button class="btn btn-primary w-full justify-center mt-2">
+          <i data-lucide="log-in" style="width:18px;height:18px"></i> Kirish
+        </button>
+      </form>
+    </div>
+    <p class="text-center text-xs mt-5" style="color:var(--faint)">Orchestra v2 · Claude Agent SDK</p>
   </div>
-  {% endif %}
-  <form method="post" action="/login" class="space-y-4">
-    <input name="username" placeholder="Foydalanuvchi" autofocus
-           class="w-full px-3 py-2 rounded bg-slate-900 border border-slate-600">
-    <input name="password" type="password" placeholder="Parol"
-           class="w-full px-3 py-2 rounded bg-slate-900 border border-slate-600">
-    <button class="w-full bg-emerald-600 hover:bg-emerald-500 py-2 rounded font-semibold">
-      Kirish
-    </button>
-  </form>
 </div>
+<script>lucide.createIcons();</script>
 {% endblock %}

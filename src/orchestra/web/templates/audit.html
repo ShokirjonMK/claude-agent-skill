@@ -1,25 +1,24 @@
 {% extends "base.html" %}
 {% block title %}Audit — Orchestra{% endblock %}
+{% block page_title %}Audit timeline{% endblock %}
 {% block content %}
-<h1 class="text-xl font-bold mb-4">Audit timeline</h1>
-<form method="get" action="/audit" class="mb-4">
-  <input name="q" value="{{ q }}" placeholder="action bo'yicha filtr (masalan ssh, login, task)"
-         class="px-3 py-2 rounded bg-slate-900 border border-slate-600 w-80">
-  <button class="bg-slate-700 px-3 py-2 rounded">Filtr</button>
+<form method="get" action="/audit" class="flex gap-2 mb-5">
+  <input name="q" value="{{ q }}" placeholder="action bo'yicha filtr (ssh, login, task, secret…)" class="input max-w-md">
+  <button class="btn btn-ghost"><i data-lucide="filter" style="width:16px;height:16px"></i> Filtr</button>
 </form>
-<table class="w-full text-sm">
-  <thead class="text-slate-400 text-left border-b border-slate-700">
-    <tr><th class="py-2">Vaqt</th><th>Aktor</th><th>Amal</th><th>Obyekt</th></tr>
-  </thead>
-  <tbody>
-    {% for e in entries %}
-    <tr class="border-b border-slate-800">
-      <td class="py-1 text-slate-400">{{ e.created_at }}</td>
-      <td>{{ e.actor_type }} {{ (e.actor_id or '')[:8] }}</td>
-      <td class="text-emerald-300">{{ e.action }}</td>
-      <td><code>{{ (e.target or '')[:8] }}</code></td>
-    </tr>
-    {% else %}<tr><td colspan="4" class="text-slate-500 py-3">Yozuv yo'q.</td></tr>{% endfor %}
-  </tbody>
-</table>
+<div class="card overflow-hidden">
+  <table class="tbl">
+    <thead><tr><th>Vaqt</th><th>Aktor</th><th>Amal</th><th>Obyekt</th></tr></thead>
+    <tbody>
+      {% for e in entries %}
+      <tr>
+        <td style="color:var(--muted)" class="whitespace-nowrap text-[13px]">{{ e.created_at[:19] if e.created_at else '' }}</td>
+        <td><span class="text-xs px-2 py-0.5 rounded" style="background:rgba(124,131,255,.1)">{{ e.actor_type }}</span> {{ (e.actor_id or '')[:8] }}</td>
+        <td><code style="color:var(--accent2)">{{ e.action }}</code></td>
+        <td><code style="color:var(--muted)">{{ (e.target or '')[:8] }}</code></td>
+      </tr>
+      {% else %}<tr><td colspan="4" class="text-center py-10" style="color:var(--muted)">Yozuv yo'q.</td></tr>{% endfor %}
+    </tbody>
+  </table>
+</div>
 {% endblock %}
