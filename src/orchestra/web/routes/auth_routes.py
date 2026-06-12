@@ -12,8 +12,7 @@ router = APIRouter()
 
 @router.get("/login", response_class=HTMLResponse)
 async def login_form(request: Request, error: str | None = None):
-    return request.app.state.templates.TemplateResponse(
-        "login.html", {"request": request, "error": error, "user": None}
+    return request.app.state.templates.TemplateResponse(request, "login.html", {"request": request, "error": error, "user": None}
     )
 
 

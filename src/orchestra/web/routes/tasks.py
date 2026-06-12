@@ -15,8 +15,7 @@ router = APIRouter()
 async def list_tasks(request: Request, user=Depends(require_role(Role.VIEWER))):
     db = request.app.state.db
     tasks = await db.recent_tasks(limit=50)
-    return request.app.state.templates.TemplateResponse(
-        "tasks.html", {"request": request, "user": user, "tasks": tasks}
+    return request.app.state.templates.TemplateResponse(request, "tasks.html", {"request": request, "user": user, "tasks": tasks}
     )
 
 
@@ -45,8 +44,7 @@ async def task_detail(task_id: str, request: Request, user=Depends(require_role(
     subtasks = await db.list_subtasks(task_id)
     events = await db.list_events(task_id, limit=100)
     chat = await db.list_chat_messages(task_id, limit=100)
-    return request.app.state.templates.TemplateResponse(
-        "task_detail.html",
+    return request.app.state.templates.TemplateResponse(request, "task_detail.html",
         {
             "request": request, "user": user, "task": task,
             "subtasks": subtasks, "events": events, "chat": chat,

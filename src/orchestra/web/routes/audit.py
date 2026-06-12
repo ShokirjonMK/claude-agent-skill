@@ -16,6 +16,5 @@ async def audit_view(
 ):
     db = request.app.state.db
     entries = await db.list_audit(limit=300, action_like=q)
-    return request.app.state.templates.TemplateResponse(
-        "audit.html", {"request": request, "user": user, "entries": entries, "q": q or ""}
+    return request.app.state.templates.TemplateResponse(request, "audit.html", {"request": request, "user": user, "entries": entries, "q": q or ""}
     )

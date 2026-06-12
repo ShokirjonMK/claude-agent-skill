@@ -14,8 +14,7 @@ router = APIRouter()
 @router.get("/servers")
 async def list_servers(request: Request, user=Depends(require_role(Role.ADMIN))):
     servers = await request.app.state.db.list_servers()
-    return request.app.state.templates.TemplateResponse(
-        "servers.html", {"request": request, "user": user, "servers": servers}
+    return request.app.state.templates.TemplateResponse(request, "servers.html", {"request": request, "user": user, "servers": servers}
     )
 
 

@@ -15,8 +15,7 @@ router = APIRouter()
 async def list_secrets(request: Request, user=Depends(require_role(Role.ADMIN))):
     store = request.app.state.store
     items = await store.list_for_ui()
-    return request.app.state.templates.TemplateResponse(
-        "secrets.html",
+    return request.app.state.templates.TemplateResponse(request, "secrets.html",
         {
             "request": request, "user": user, "items": items,
             "enc_ok": store.encryption_available,

@@ -25,8 +25,7 @@ async def chat_page(
     tasks = await db.recent_tasks(limit=30)
     selected = await db.get_task(task) if task else None
     history = await db.list_chat_messages(task, limit=200) if task else []
-    return request.app.state.templates.TemplateResponse(
-        "chat.html",
+    return request.app.state.templates.TemplateResponse(request, "chat.html",
         {
             "request": request, "user": user, "tasks": tasks,
             "selected": selected, "history": history,

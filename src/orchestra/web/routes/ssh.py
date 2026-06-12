@@ -19,8 +19,7 @@ async def ssh_page(request: Request, server: str | None = None, user=Depends(req
     servers = await db.list_servers()
     selected = await db.get_server(server) if server else None
     history = await db.list_ssh_commands(server, limit=50) if server else []
-    return request.app.state.templates.TemplateResponse(
-        "ssh.html",
+    return request.app.state.templates.TemplateResponse(request, "ssh.html",
         {
             "request": request, "user": user, "servers": servers,
             "selected": selected, "history": history, "last": None,
@@ -43,8 +42,7 @@ async def ssh_run(
     result = await mgr.run_command(server, command, user_id=user.id)
     servers = await db.list_servers()
     history = await db.list_ssh_commands(server_id, limit=50)
-    return request.app.state.templates.TemplateResponse(
-        "ssh.html",
+    return request.app.state.templates.TemplateResponse(request, "ssh.html",
         {
             "request": request, "user": user, "servers": servers,
             "selected": server, "history": history, "last": result,

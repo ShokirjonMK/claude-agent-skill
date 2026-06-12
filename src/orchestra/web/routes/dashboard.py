@@ -16,7 +16,6 @@ async def dashboard(request: Request, user=Depends(require_role(Role.VIEWER))):
     tasks = await db.recent_tasks(limit=15)
     runs = await db.active_agent_runs()
     events = await db.list_events(limit=20)
-    return request.app.state.templates.TemplateResponse(
-        "dashboard.html",
+    return request.app.state.templates.TemplateResponse(request, "dashboard.html",
         {"request": request, "user": user, "tasks": tasks, "runs": runs, "events": events},
     )

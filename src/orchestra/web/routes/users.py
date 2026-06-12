@@ -15,8 +15,7 @@ router = APIRouter()
 @router.get("/users")
 async def list_users(request: Request, user=Depends(require_role(Role.ADMIN))):
     users = await request.app.state.db.list_users()
-    return request.app.state.templates.TemplateResponse(
-        "users.html", {"request": request, "user": user, "users": users}
+    return request.app.state.templates.TemplateResponse(request, "users.html", {"request": request, "user": user, "users": users}
     )
 
 
