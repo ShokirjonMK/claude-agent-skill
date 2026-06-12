@@ -31,9 +31,11 @@ def test_submit_and_status(tmp_path, monkeypatch, capsys):
     asyncio.run(cli.cmd_submit("CLI orqali vazifa"))
     out = capsys.readouterr().out
     assert "Vazifa qo'shildi" in out
-    task_id = out.split("Vazifa qo'shildi:")[1].strip().splitlines()[0]
+    line = out.split("Vazifa qo'shildi:")[1].strip().splitlines()[0]
+    code = line.split()[0]  # "T-xxxxx"
+    assert code.startswith("T-")
 
-    asyncio.run(cli.cmd_status(task_id[:8]))
+    asyncio.run(cli.cmd_status(code))
     out2 = capsys.readouterr().out
     assert "PENDING" in out2
 

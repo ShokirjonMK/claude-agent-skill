@@ -6,22 +6,29 @@
 {% if user.role.value in ['operator', 'admin'] %}
 <form method="post" action="/tasks" class="card p-4 flex flex-col sm:flex-row gap-3 mb-6">
   <input name="description" placeholder="Yangi vazifa tavsifi — masalan: API endpoint yoz va testla…" required class="input flex-1">
+  {% if servers %}
+  <select name="server_id" class="input sm:w-56">
+    <option value="">— umumiy —</option>
+    {% for s in servers %}<option value="{{ s.id }}">{{ s.name }}</option>{% endfor %}
+  </select>
+  {% endif %}
   <button class="btn btn-primary justify-center"><i data-lucide="plus" style="width:18px;height:18px"></i> Qo'shish</button>
 </form>
 {% endif %}
 
 <div class="card overflow-hidden">
   <table class="tbl">
-    <thead><tr><th>ID</th><th>Sarlavha</th><th class="text-right">Holat</th></tr></thead>
+    <thead><tr><th>Kod</th><th>Sarlavha</th><th>Server</th><th class="text-right">Holat</th></tr></thead>
     <tbody>
       {% for t in tasks %}
       <tr class="cursor-pointer" onclick="location='/tasks/{{ t.id }}'">
-        <td><code style="color:var(--accent)">{{ t.id[:8] }}</code></td>
-        <td>{{ t.title[:70] }}</td>
+        <td><code style="color:var(--accent)">{{ t.code or t.id[:8] }}</code></td>
+        <td>{{ t.title[:60] }}</td>
+        <td style="color:var(--muted)">{{ smap.get(t.server_id, '—') if t.server_id else '—' }}</td>
         <td class="text-right"><span class="badge b-{{ t.status.value|lower }}">{{ t.status.value }}</span></td>
       </tr>
       {% else %}
-      <tr><td colspan="3" class="text-center py-10" style="color:var(--muted)">Vazifalar yo'q.</td></tr>
+      <tr><td colspan="4" class="text-center py-10" style="color:var(--muted)">Vazifalar yo'q.</td></tr>
       {% endfor %}
     </tbody>
   </table>

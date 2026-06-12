@@ -39,6 +39,7 @@ class ChatService:
         user_text: str,
         channel: str,  # 'telegram' | 'web'
         user_id: str | None = None,
+        context: str | None = None,
     ) -> str:
         """Foydalanuvchi xabarini yuboradi, agent javobini qaytaradi (kontekst saqlanadi)."""
         # Avvalgi suhbat sessiyasini (resume uchun) topamiz.
@@ -59,6 +60,9 @@ class ChatService:
         if api_key:
             os.environ["ANTHROPIC_API_KEY"] = api_key
         prompt = self._build_prompt(task_id, user_text)
+        if context and not prev_session:
+            # Suhbat boshida server/kontekst ma'lumotini qo'shamiz (faqat birinchi xabarda).
+            prompt = f"[KONTEKST] {context}\n\n{prompt}"
         reply, new_session = await self._run_agent(
             "chat", prompt, model=model, session_id=prev_session
         )

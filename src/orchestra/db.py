@@ -33,6 +33,8 @@ _TABLES: dict[str, str] = {
             kind TEXT NOT NULL,
             title TEXT,
             description TEXT,
+            code TEXT,
+            server_id TEXT,
             strategy TEXT,
             deps TEXT,
             status TEXT NOT NULL,
@@ -90,6 +92,8 @@ _TABLES: dict[str, str] = {
             username TEXT,
             auth_method TEXT,
             secret_ref TEXT,
+            tg_chat_id TEXT,
+            tg_token_ref TEXT,
             created_by TEXT,
             created_at TEXT
         )""",
@@ -136,6 +140,8 @@ def _task_from_row(row: dict[str, Any]) -> Task:
         kind=row["kind"],
         title=row["title"] or "",
         description=row["description"] or "",
+        code=row.get("code"),
+        server_id=row.get("server_id"),
         strategy=row["strategy"],
         deps=json.loads(row["deps"]) if row["deps"] else [],
         status=TaskStatus(row["status"]),
@@ -169,6 +175,8 @@ def _server_from_row(row: dict[str, Any]) -> Server:
         username=row["username"],
         auth_method=row["auth_method"],
         secret_ref=row["secret_ref"],
+        tg_chat_id=row.get("tg_chat_id"),
+        tg_token_ref=row.get("tg_token_ref"),
         created_by=row["created_by"],
         created_at=row["created_at"],
     )
@@ -198,22 +206,45 @@ class AsyncDB(abc.ABC):
     @abc.abstractmethod
     async def _create_tables(self) -> None: ...
 
+    # Mavjud bazalarga yangi ustunlarni qo'shish (yangi DB'da CREATE allaqachon o'z ichiga oladi).
+    _MIGRATIONS: list[tuple[str, str, str]] = [
+        ("tasks", "code", "TEXT"),
+        ("tasks", "server_id", "TEXT"),
+        ("servers", "tg_chat_id", "TEXT"),
+        ("servers", "tg_token_ref", "TEXT"),
+    ]
+
     async def initdb(self) -> None:
         await self._create_tables()
+        await self._migrate()
+
+    async def _migrate(self) -> None:
+        for table, col, typ in self._MIGRATIONS:
+            try:
+                if self.dialect == "postgres":
+                    await self._execute(
+                        f"ALTER TABLE {table} ADD COLUMN IF NOT EXISTS {col} {typ}"
+                    )
+                else:
+                    cols = await self._fetchall(f"PRAGMA table_info({table})")
+                    if col not in {c["name"] for c in cols}:
+                        await self._execute(f"ALTER TABLE {table} ADD COLUMN {col} {typ}")
+            except Exception:
+                pass  # ustun allaqachon mavjud — e'tiborsiz qoldiramiz
 
     # ── tasks ────────────────────────────────────────────────────────────────
     async def save_task(self, task: Task) -> None:
         now = utcnow()
         await self._execute(
             """INSERT INTO tasks
-               (id, parent_id, kind, title, description, strategy, deps, status,
-                result, attempts, agent_id, session_id, created_at, updated_at)
-               VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
+               (id, parent_id, kind, title, description, code, server_id, strategy, deps,
+                status, result, attempts, agent_id, session_id, created_at, updated_at)
+               VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
             (
                 task.id, task.parent_id, task.kind, task.title, task.description,
-                task.strategy, json.dumps(task.deps), task.status.value, task.result,
-                task.attempts, task.agent_id, task.session_id,
-                task.created_at or now, now,
+                task.code, task.server_id, task.strategy, json.dumps(task.deps),
+                task.status.value, task.result, task.attempts, task.agent_id,
+                task.session_id, task.created_at or now, now,
             ),
         )
 
@@ -281,17 +312,44 @@ class AsyncDB(abc.ABC):
         )
         return _task_from_row(row) if row else None
 
-    async def recent_tasks(self, limit: int = 10, kind: str | None = "root") -> list[Task]:
+    async def recent_tasks(
+        self, limit: int = 10, kind: str | None = "root", server_id: str | None = None
+    ) -> list[Task]:
+        clauses, params = [], []
         if kind:
-            rows = await self._fetchall(
-                "SELECT * FROM tasks WHERE kind = ? ORDER BY created_at DESC LIMIT ?",
-                (kind, limit),
-            )
-        else:
-            rows = await self._fetchall(
-                "SELECT * FROM tasks ORDER BY created_at DESC LIMIT ?", (limit,)
-            )
+            clauses.append("kind = ?")
+            params.append(kind)
+        if server_id is not None:
+            clauses.append("server_id = ?")
+            params.append(server_id)
+        where = (" WHERE " + " AND ".join(clauses)) if clauses else ""
+        params.append(limit)
+        rows = await self._fetchall(
+            f"SELECT * FROM tasks{where} ORDER BY created_at DESC LIMIT ?", tuple(params)
+        )
         return [_task_from_row(r) for r in rows]
+
+    async def get_task_by_ref(self, ref: str) -> Task | None:
+        """To'liq id, qisqartirilgan id, yoki tracking kodi bo'yicha vazifa topadi."""
+        t = await self.get_task(ref)
+        if t:
+            return t
+        row = await self._fetchone(
+            "SELECT * FROM tasks WHERE code = ? OR UPPER(code) = UPPER(?) LIMIT 1", (ref, ref)
+        )
+        if row:
+            return _task_from_row(row)
+        for cand in await self.recent_tasks(limit=100, kind=None):
+            if cand.id.startswith(ref) or (cand.code and cand.code.lower() == ref.lower()):
+                return cand
+        return None
+
+    async def servers_with_bots(self) -> list[Server]:
+        """tg_token_ref o'rnatilgan serverlar (har biri uchun alohida bot ishlaydi)."""
+        rows = await self._fetchall(
+            "SELECT * FROM servers WHERE tg_token_ref IS NOT NULL AND tg_token_ref <> ''"
+        )
+        return [_server_from_row(r) for r in rows]
 
     async def update_status(
         self,
@@ -451,12 +509,14 @@ class AsyncDB(abc.ABC):
     # ── servers ──────────────────────────────────────────────────────────────
     async def save_server(self, server: Server) -> None:
         await self._execute(
-            """INSERT INTO servers (id, name, host, port, username, auth_method, secret_ref, created_by, created_at)
-               VALUES (?,?,?,?,?,?,?,?,?)""",
+            """INSERT INTO servers
+               (id, name, host, port, username, auth_method, secret_ref,
+                tg_chat_id, tg_token_ref, created_by, created_at)
+               VALUES (?,?,?,?,?,?,?,?,?,?,?)""",
             (
                 server.id, server.name, server.host, server.port, server.username,
-                server.auth_method, server.secret_ref, server.created_by,
-                server.created_at or utcnow(),
+                server.auth_method, server.secret_ref, server.tg_chat_id,
+                server.tg_token_ref, server.created_by, server.created_at or utcnow(),
             ),
         )
 

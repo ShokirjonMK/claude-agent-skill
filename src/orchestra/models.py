@@ -26,6 +26,12 @@ def short_agent_id(role: str) -> str:
     return f"{role}-{uuid.uuid4().hex[:6]}"
 
 
+def new_code(prefix: str = "T") -> str:
+    """Vazifa uchun qisqa, inson-o'qiy tracking kodi: `T-ab123` yoki `prod-ab123`."""
+    safe = "".join(ch for ch in (prefix or "T") if ch.isalnum())[:8] or "T"
+    return f"{safe.upper()}-{uuid.uuid4().hex[:5]}"
+
+
 class TaskStatus(str, Enum):
     """Vazifa hayot tsikli. v1'dagi o'lik TESTING holati OLIB TASHLANGAN —
     Reviewer testni REVIEWING ichida bajaradi."""
@@ -66,6 +72,8 @@ class Task:
     kind: str = "root"  # 'root' | 'subtask'
     title: str = ""
     description: str = ""
+    code: str | None = None  # qisqa tracking kodi (T-ab123)
+    server_id: str | None = None  # qaysi serverga tegishli (NULL = umumiy)
     parent_id: str | None = None
     strategy: str | None = None
     deps: list[str] = field(default_factory=list)
@@ -109,6 +117,8 @@ class Server:
     username: str = ""
     auth_method: str = "password"  # 'password' | 'key'
     secret_ref: str | None = None  # secrets.key ga ishora
+    tg_chat_id: str | None = None  # shu server botining chat id si
+    tg_token_ref: str | None = None  # shu server boti tokeni (secrets.key)
     created_by: str | None = None
     created_at: str | None = None
 

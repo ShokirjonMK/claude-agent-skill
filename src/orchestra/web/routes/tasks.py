@@ -5,7 +5,7 @@ from __future__ import annotations
 from fastapi import APIRouter, Depends, Form, Request
 from fastapi.responses import RedirectResponse
 
-from ...models import Role, Task, TaskStatus
+from ...models import Role, Task, TaskStatus, new_code
 from ...rbac import require_role
 
 router = APIRouter()
@@ -15,7 +15,11 @@ router = APIRouter()
 async def list_tasks(request: Request, user=Depends(require_role(Role.VIEWER))):
     db = request.app.state.db
     tasks = await db.recent_tasks(limit=50)
-    return request.app.state.templates.TemplateResponse(request, "tasks.html", {"request": request, "user": user, "tasks": tasks}
+    servers = await db.list_servers()
+    smap = {s.id: s.name for s in servers}
+    return request.app.state.templates.TemplateResponse(
+        request, "tasks.html",
+        {"request": request, "user": user, "tasks": tasks, "servers": servers, "smap": smap},
     )
 
 
@@ -26,11 +30,15 @@ async def create_task(
     user=Depends(require_role(Role.OPERATOR)),
 ):
     db = request.app.state.db
-    t = Task(kind="root", title=description[:80], description=description, status=TaskStatus.PENDING)
+    server_id = (await request.form()).get("server_id") or None
+    t = Task(
+        kind="root", title=description[:80], description=description,
+        status=TaskStatus.PENDING, code=new_code(), server_id=server_id,
+    )
     await db.save_task(t)
     await db.log_audit(
         actor_type="user", actor_id=user.id, action="task.created",
-        target=t.id, details={"channel": "web"},
+        target=t.id, details={"channel": "web", "code": t.code},
     )
     return RedirectResponse("/tasks", status_code=303)
 

@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 {% block title %}Vazifa {{ task.id[:8] }}{% endblock %}
-{% block page_title %}Vazifa <code style="color:var(--accent)">{{ task.id[:8] }}</code>{% endblock %}
+{% block page_title %}Vazifa <code style="color:var(--accent)">{{ task.code or task.id[:8] }}</code>{% endblock %}
 {% block page_actions %}
   <span class="badge b-{{ task.status.value|lower }}">{{ task.status.value }}</span>
   {% if user.role.value in ['operator','admin'] and task.status.value == 'FAILED' %}

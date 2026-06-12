@@ -3,29 +3,39 @@
 {% block page_title %}SSH serverlar{% endblock %}
 {% block content %}
 
-<form method="post" action="/servers" class="card p-5 grid sm:grid-cols-2 lg:grid-cols-3 gap-3 mb-6">
-  <input name="name" placeholder="Nom" required class="input">
-  <input name="host" placeholder="Host / IP" required class="input">
-  <input name="port" value="22" class="input">
-  <input name="username" placeholder="Foydalanuvchi" required class="input">
-  <select name="auth_method" class="input">
-    <option value="password">Parol</option>
-    <option value="key">Maxfiy kalit</option>
-  </select>
-  <input name="secret_value" placeholder="Parol yoki private key" class="input">
-  <button class="btn btn-primary justify-center lg:col-span-3"><i data-lucide="plus" style="width:18px;height:18px"></i> Server qo'shish</button>
+<form method="post" action="/servers" class="card p-5 mb-6">
+  <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
+    <input name="name" placeholder="Nom" required class="input">
+    <input name="host" placeholder="Host / IP" required class="input">
+    <input name="port" value="22" class="input">
+    <input name="username" placeholder="Foydalanuvchi" required class="input">
+    <select name="auth_method" class="input">
+      <option value="password">Parol</option>
+      <option value="key">Maxfiy kalit</option>
+    </select>
+    <input name="secret_value" placeholder="Parol yoki private key" class="input">
+  </div>
+  <div class="mt-4 pt-4" style="border-top:1px solid var(--border)">
+    <div class="text-sm font-semibold mb-2 flex items-center gap-2"><i data-lucide="send" style="width:16px;height:16px;color:var(--accent2)"></i> Shu server uchun Telegram bot (ixtiyoriy)</div>
+    <div class="grid sm:grid-cols-2 gap-3">
+      <input name="tg_token" placeholder="Bot token (@BotFather)" class="input mono">
+      <input name="tg_chat_id" placeholder="Chat ID (ruxsatli)" class="input mono">
+    </div>
+    <p class="text-xs mt-1.5" style="color:var(--faint)">Token bersangiz — shu server uchun alohida bot ishlaydi: vazifalar shu serverga bog'lanadi va har qadam shu botga yuboriladi.</p>
+  </div>
+  <button class="btn btn-primary justify-center w-full mt-4"><i data-lucide="plus" style="width:18px;height:18px"></i> Server qo'shish</button>
 </form>
 
 <div class="card overflow-hidden">
   <table class="tbl">
-    <thead><tr><th>Nom</th><th>Host</th><th>User</th><th>Auth</th><th></th></tr></thead>
+    <thead><tr><th>Nom</th><th>Host</th><th>User</th><th>Bot</th><th></th></tr></thead>
     <tbody>
       {% for s in servers %}
       <tr>
         <td><a href="/ssh?server={{ s.id }}" style="color:var(--accent)" class="font-medium">{{ s.name }}</a></td>
         <td class="mono">{{ s.host }}:{{ s.port }}</td>
         <td>{{ s.username }}</td>
-        <td><span class="badge b-pending">{{ s.auth_method }}</span></td>
+        <td>{% if s.tg_token_ref %}<span class="badge b-done">bot</span>{% else %}<span style="color:var(--faint)">—</span>{% endif %}</td>
         <td class="text-right"><form method="post" action="/servers/{{ s.id }}/delete"><button class="btn btn-danger btn-sm"><i data-lucide="trash-2" style="width:15px;height:15px"></i></button></form></td>
       </tr>
       {% else %}<tr><td colspan="5" class="text-center py-10" style="color:var(--muted)">Server yo'q.</td></tr>{% endfor %}

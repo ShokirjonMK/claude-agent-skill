@@ -19,7 +19,7 @@ import sys
 from .chat import ChatService
 from .config import get_settings
 from .db import make_db
-from .models import Role, Task, TaskStatus, User
+from .models import Role, Task, TaskStatus, User, new_code
 from .orchestrator import Orchestrator
 from .reporter import TelegramReporter
 from .secrets import SecretStore
@@ -60,22 +60,17 @@ async def cmd_createadmin(username: str, password: str) -> None:
 
 async def cmd_submit(text: str) -> None:
     _, db, _ = await _bootstrap()
-    t = Task(kind="root", title=text[:80], description=text, status=TaskStatus.PENDING)
+    t = Task(kind="root", title=text[:80], description=text, status=TaskStatus.PENDING,
+             code=new_code())
     await db.save_task(t)
     await db.log_audit(actor_type="system", actor_id=None, action="task.created", target=t.id)
-    print(f"✅ Vazifa qo'shildi: {t.id}")
+    print(f"✅ Vazifa qo'shildi: {t.code} ({t.id})")
     await db.close()
 
 
 async def cmd_status(task_id: str) -> None:
     _, db, _ = await _bootstrap()
-    t = await db.get_task(task_id)
-    if not t:
-        # qisqartirilgan id bo'yicha qidiramiz
-        for cand in await db.recent_tasks(limit=100, kind=None):
-            if cand.id.startswith(task_id):
-                t = cand
-                break
+    t = await db.get_task_by_ref(task_id)
     if not t:
         print("Topilmadi.")
     else:
@@ -97,14 +92,12 @@ async def cmd_run() -> None:
 
 
 async def cmd_bot() -> None:
-    from .telegram_bot import TelegramBot
+    from .telegram_bot import BotManager
 
     settings, db, store = await _bootstrap()
-    chat = ChatService(db, store)
-    bot = TelegramBot(db, store, chat)
-    print("🤖 Telegram bot ishga tushdi.")
+    manager = BotManager(db, store)
     try:
-        await bot.run()
+        await manager.run()
     finally:
         await db.close()
 
