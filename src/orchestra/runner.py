@@ -19,9 +19,10 @@ from .guards import is_dangerous, reason
 
 # SDK ixtiyoriy — yo'q bo'lsa run_agent chaqirilganda aniq xato beriladi.
 try:  # pragma: no cover - muhitga bog'liq
-    from claude_agent_sdk import ClaudeAgentOptions, query as _sdk_query
+    from claude_agent_sdk import ClaudeAgentOptions, HookMatcher, query as _sdk_query
 except Exception:  # pragma: no cover
     ClaudeAgentOptions = None  # type: ignore[assignment]
+    HookMatcher = None  # type: ignore[assignment]
     _sdk_query = None  # type: ignore[assignment]
 
 
@@ -103,10 +104,15 @@ def make_pretooluse_guard(
             cmd = _extract_bash_command(input_data) or ""
             if on_block:
                 await on_block(cmd, why or "dangerous")
-            # Claude Agent SDK PreToolUse deny shakli.
+            # Claude Agent SDK PreToolUse deny shakli (hookSpecificOutput).
             return {
-                "decision": "block",
-                "reason": f"Xavfli Bash komandasi bloklandi (guard): {why}",
+                "hookSpecificOutput": {
+                    "hookEventName": "PreToolUse",
+                    "permissionDecision": "deny",
+                    "permissionDecisionReason": (
+                        f"Xavfli Bash komandasi bloklandi (guard): {why}"
+                    ),
+                }
             }
         return {}
 
@@ -175,13 +181,17 @@ async def run_agent(
     spec = AGENT_SPECS[role]
     guard = make_pretooluse_guard(on_block=on_block, patterns=dangerous_patterns)
 
+    # MUHIM: rol xulqi `system_prompt` orqali beriladi (agents={} — bu SDK'da subagent
+    # ta'rifi, agent SIFATIDA ishlatmaydi). Har run_agent = bitta izolyatsiyalangan
+    # sessiya: o'z system prompti + cheklangan tool to'plami.
+    hooks = {"PreToolUse": [HookMatcher(matcher="Bash", hooks=[guard])]} if HookMatcher else None
     options = ClaudeAgentOptions(
-        agents={role: build_agent_definition(spec, model)},
-        allowed_tools=[*spec.tools, "Agent"],
+        system_prompt=spec.system_prompt,
+        allowed_tools=list(spec.tools),
         permission_mode="bypassPermissions",
         model=model,
         resume=session_id,
-        hooks={"PreToolUse": [guard]},
+        hooks=hooks,
     )
 
     stream = _sdk_query(prompt=prompt, options=options)

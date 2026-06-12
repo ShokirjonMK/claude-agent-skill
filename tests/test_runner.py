@@ -60,7 +60,7 @@ async def test_pretooluse_guard_denies_and_calls_on_block():
 
     guard = make_pretooluse_guard(on_block=on_block)
     out = await guard({"tool_name": "Bash", "tool_input": {"command": "shutdown now"}})
-    assert out.get("decision") == "block"
+    assert out["hookSpecificOutput"]["permissionDecision"] == "deny"
     assert blocked_calls and blocked_calls[0][0] == "shutdown now"
 
 
@@ -116,9 +116,10 @@ async def test_run_agent_with_mocked_sdk(monkeypatch):
     text, sid = await runner.run_agent("planner", "Vazifa", model="claude-opus-4-8")
     assert sid == "sess-run"
     assert extract_json(text) == {"strategy": "s", "subtasks": []}
-    # Options to'g'ri qurildimi.
+    # Options to'g'ri qurildimi: rol system_prompt orqali, cheklangan toollar.
     assert captured["permission_mode"] == "bypassPermissions"
-    assert "Agent" in captured["allowed_tools"]
+    assert captured["system_prompt"]  # planner system prompt o'rnatilgan
+    assert "Read" in captured["allowed_tools"]
     assert captured["model"] == "claude-opus-4-8"
 
 
