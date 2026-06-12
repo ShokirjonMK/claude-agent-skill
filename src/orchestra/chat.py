@@ -6,6 +6,7 @@ saqlanadi. Har xabar `chat_messages`'ga (in/out) yoziladi. TG va Web ikkalasi is
 
 from __future__ import annotations
 
+import os
 from typing import Awaitable, Callable
 
 from .agents import AGENT_SPECS
@@ -53,6 +54,10 @@ class ChatService:
         model = await self._store.get_config(
             AGENT_SPECS["chat"].model_key, AGENT_SPECS["chat"].default_model
         )
+        # SDK ANTHROPIC_API_KEY ni env'dan o'qiydi — dinamik secret'ni joylaymiz.
+        api_key = await self._store.get_config("ANTHROPIC_API_KEY")
+        if api_key:
+            os.environ["ANTHROPIC_API_KEY"] = api_key
         prompt = self._build_prompt(task_id, user_text)
         reply, new_session = await self._run_agent(
             "chat", prompt, model=model, session_id=prev_session

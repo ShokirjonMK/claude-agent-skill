@@ -141,9 +141,14 @@ class TelegramBot:
     async def run(self, *, stop_event: asyncio.Event | None = None) -> None:
         import httpx
 
+        # Token Secrets'dan dinamik keladi — yo'q bo'lsa CRASH qilmaymiz, kutamiz.
         token = await self._store.get_config("TG_BOT_TOKEN")
-        if not token:
-            raise RuntimeError("TG_BOT_TOKEN sozlanmagan (Secrets sahifasidan kiriting).")
+        while not token:
+            print("⏳ TG_BOT_TOKEN kutilyapti (Secrets sahifasidan kiriting)…")
+            await asyncio.sleep(15)
+            if stop_event is not None and stop_event.is_set():
+                return
+            token = await self._store.get_config("TG_BOT_TOKEN")
         base = f"https://api.telegram.org/bot{token}"
         offset = 0
         async with httpx.AsyncClient(timeout=40) as client:

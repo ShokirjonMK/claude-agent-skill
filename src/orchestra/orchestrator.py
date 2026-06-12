@@ -10,6 +10,7 @@ chaqiradi, holatni bazaga qaytaradi. Process/server uzilsa, idempotent davom eta
 from __future__ import annotations
 
 import asyncio
+import os
 from typing import Awaitable, Callable
 
 from .agents import AGENT_SPECS
@@ -58,6 +59,11 @@ class Orchestrator:
     # ── Agent chaqiruvi + agent_run audit + on_block ─────────────────────────
     async def _call_agent(self, role: str, task: Task, prompt: str) -> tuple[str, str | None]:
         model = await self._model(role)
+        # Claude Agent SDK ANTHROPIC_API_KEY ni MUHITDAN o'qiydi — dinamik secret'ni
+        # agent chaqiruvidan oldin env'ga joylaymiz (UI'dan kiritilgan kalit ishlashi uchun).
+        api_key = await self._store.get_config("ANTHROPIC_API_KEY")
+        if api_key:
+            os.environ["ANTHROPIC_API_KEY"] = api_key
         run = await self._db.start_agent_run(task.id, role, model)
 
         async def on_block(cmd: str, why: str) -> None:
